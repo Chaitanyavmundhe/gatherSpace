@@ -5,20 +5,30 @@ import Venue from '../models/Venue.js';
 // @access  Private (Listers only)
 export const createVenue = async (req, res) => {
   try {
-    const { title, description, capacity, pricePerDay, longitude, latitude, formattedAddress } = req.body;
+    const { title, description, capacity, pricePerDay, location } = req.body;
 
-    // Build GeoJSON Point
+    // Extract coordinates directly from body or location object
+    const lng = Number(req.body.longitude ?? location?.coordinates?.[0]);
+    const lat = Number(req.body.latitude ?? location?.coordinates?.[1]);
+
+    if (isNaN(lng) || isNaN(lat)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid numeric longitude and latitude coordinates are required',
+      });
+    }
+
     const venue = await Venue.create({
       title,
       description,
-      capacity,
-      pricePerDay,
+      capacity: Number(capacity),
+      pricePerDay: Number(pricePerDay),
+      owner: req.user.id,
       location: {
         type: 'Point',
-        coordinates: [Number(longitude), Number(latitude)], // [lng, lat]
-        formattedAddress,
+        coordinates: [lng, lat],
+        formattedAddress: location?.address || req.body.formattedAddress || '',
       },
-      owner: req.user.id, // Injected by Auth Middleware
     });
 
     res.status(201).json({
@@ -41,7 +51,6 @@ export const getVenuesInRadius = async (req, res) => {
     const { longitude, latitude, distance } = req.params;
 
     // Earth's radius = 6,378.1 km
-    // Calculate radius in radians = distance / Earth Radius
     const radius = Number(distance) / 6378.1;
 
     const venues = await Venue.find({
