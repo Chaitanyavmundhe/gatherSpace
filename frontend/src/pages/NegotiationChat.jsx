@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { io } from 'socket.io-client';
-import { Send, MessageSquare } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { io } from "socket.io-client";
+import { Send, MessageSquare } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 let socket;
 
@@ -10,18 +10,24 @@ export default function NegotiationChat() {
   const { roomId } = useParams();
   const { user } = useAuth();
   const [messages, setMessages] = useState([]);
-  const [inputMessage, setInputMessage] = useState('');
-  const [offeredPrice, setOfferedPrice] = useState('');
+  const [inputMessage, setInputMessage] = useState("");
+  const [offeredPrice, setOfferedPrice] = useState("");
 
   useEffect(() => {
-    // Initialize Socket.io client connection over WebSocket proxy
-    socket = io('http://localhost:5050');
+    // Dynamic URL fallback: uses VITE_SOCKET_URL on Vercel, defaults to localhost in dev
+    const SOCKET_URL =
+      import.meta.env.VITE_SOCKET_URL || "http://localhost:5050";
+
+    socket = io(SOCKET_URL, {
+      withCredentials: true,
+      transports: ["websocket", "polling"],
+    });
 
     // Protocol Handshake & Room Join
-    socket.emit('join_room', roomId);
+    socket.emit("join_room", roomId);
 
     // Incoming Event Listener
-    socket.on('receive_message', (data) => {
+    socket.on("receive_message", (data) => {
       setMessages((prev) => [...prev, data]);
     });
 
@@ -34,15 +40,16 @@ export default function NegotiationChat() {
     e.preventDefault();
     if (!inputMessage.trim()) return;
 
-    socket.emit('send_message', {
+    socket.emit("send_message", {
       roomId,
-      sender: user?.name || 'Anonymous User',
+      sender: user?.name || "Anonymous User",
       message: inputMessage,
       offeredPrice: offeredPrice ? Number(offeredPrice) : null,
+      timestamp: new Date().toISOString(),
     });
 
-    setInputMessage('');
-    setOfferedPrice('');
+    setInputMessage("");
+    setOfferedPrice("");
   };
 
   return (
@@ -60,17 +67,26 @@ export default function NegotiationChat() {
             <div
               key={idx}
               className={`p-3 rounded-lg max-w-[80%] ${
-                m.sender === user?.name ? 'bg-indigo-50 border border-indigo-100 ml-auto' : 'bg-gray-100'
+                m.sender === user?.name
+                  ? "bg-indigo-50 border border-indigo-100 ml-auto"
+                  : "bg-gray-100"
               }`}
             >
               <div className="flex justify-between items-center text-xs text-gray-500 mb-1">
                 <span className="font-semibold text-gray-700">{m.sender}</span>
-                <span>{new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                <span>
+                  {m.timestamp
+                    ? new Date(m.timestamp).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : ""}
+                </span>
               </div>
               <p className="text-sm text-gray-800">{m.message}</p>
               {m.offeredPrice && (
                 <span className="inline-block mt-2 bg-emerald-100 text-emerald-800 text-xs px-2 py-0.5 rounded font-mono font-bold">
-                  Proposed Price: ₹{m.offeredPrice.toLocaleString('en-IN')}/day
+                  Proposed Price: ₹{m.offeredPrice.toLocaleString("en-IN")}/day
                 </span>
               )}
             </div>
@@ -78,7 +94,10 @@ export default function NegotiationChat() {
         </div>
 
         {/* Messaging Input Controls */}
-        <form onSubmit={handleSendMessage} className="p-3 border-t flex gap-2 items-center bg-gray-50 rounded-b-xl">
+        <form
+          onSubmit={handleSendMessage}
+          className="p-3 border-t flex gap-2 items-center bg-gray-50 rounded-b-xl"
+        >
           <input
             type="number"
             placeholder="Offer (₹)"
@@ -94,7 +113,10 @@ export default function NegotiationChat() {
             className="flex-1 p-2 border rounded-md text-sm bg-white focus:outline-none"
             required
           />
-          <button type="submit" className="bg-indigo-600 text-white p-2.5 rounded-md hover:bg-indigo-700 transition">
+          <button
+            type="submit"
+            className="bg-indigo-600 text-white p-2.5 rounded-md hover:bg-indigo-700 transition"
+          >
             <Send className="w-4 h-4" />
           </button>
         </form>
