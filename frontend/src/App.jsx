@@ -9,7 +9,6 @@ import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
-import Register from "./pages/Register";
 import VenueDiscovery from "./pages/VenueDiscovery";
 import CreateVenue from "./pages/CreateVenue";
 import BookingCheckout from "./pages/BookingCheckout";
@@ -22,12 +21,8 @@ export default function App() {
         <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
           <Navbar />
           <Routes>
-            {/* Landing Page as Root Route */}
             <Route path="/" element={<Home />} />
-
-            {/* Public Auth & Discovery Routes */}
             <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
             <Route path="/venues" element={<VenueDiscovery />} />
 
             {/* Protected Routes */}
@@ -47,7 +42,6 @@ export default function App() {
               <Route path="/negotiate/:roomId" element={<NegotiationChat />} />
             </Route>
 
-            {/* Fallback to Home */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
