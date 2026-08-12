@@ -14,7 +14,7 @@ export default function Navbar() {
   return (
     <nav className="bg-white border-b border-gray-200 px-6 py-3.5 flex items-center justify-between sticky top-0 z-50">
       <Link
-        to="/venues"
+        to="/"
         className="flex items-center gap-2 font-bold text-xl text-indigo-600"
       >
         <Building2 className="w-6 h-6" />
@@ -23,7 +23,7 @@ export default function Navbar() {
 
       <div className="flex items-center gap-4">
         <Link
-          to="/"
+          to="/venues"
           className="flex items-center gap-1 text-sm font-medium text-gray-600 hover:text-indigo-600 transition"
         >
           <MapPin className="w-4 h-4" />

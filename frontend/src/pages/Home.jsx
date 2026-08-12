@@ -12,7 +12,7 @@ export default function Home() {
     <div className="bg-gray-50 min-h-[calc(100vh-65px)] flex flex-col justify-between">
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-16 pb-20 lg:pt-24 lg:pb-28">
-        <div className="max-w-7xl mx-mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-semibold mb-6">
             <span>✨ The Next-Gen Venue Booking Platform</span>
           </div>
