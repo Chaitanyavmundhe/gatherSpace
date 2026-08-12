@@ -1,11 +1,14 @@
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-const ProtectedRoute = ({ allowedRoles }) => {
-  const { user } = useAuth();
+export default function ProtectedRoute({ allowedRoles }) {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) return null; // or a spinner loading indicator
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
@@ -13,6 +16,4 @@ const ProtectedRoute = ({ allowedRoles }) => {
   }
 
   return <Outlet />;
-};
-
-export default ProtectedRoute;
+}

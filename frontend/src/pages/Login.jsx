@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Building2, UserCheck, LogIn } from "lucide-react";
 
 export default function Login() {
@@ -14,6 +14,10 @@ export default function Login() {
 
   const { login, register } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Extract return target path set by ProtectedRoute, or fallback to /venues
+  const redirectPath = location.state?.from?.pathname || "/venues";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -26,7 +30,9 @@ export default function Login() {
       } else {
         await login(email, password);
       }
-      navigate("/venues");
+
+      // Redirect back to the originally requested route
+      navigate(redirectPath, { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || "Authentication failed");
     } finally {

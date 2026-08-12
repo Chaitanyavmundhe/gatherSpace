@@ -37,7 +37,7 @@ export default function Home() {
               Explore Spaces
             </Link>
             <Link
-              to="/register"
+              to="/create-venue"
               className="px-6 py-3.5 bg-white hover:bg-gray-100 text-gray-800 border border-gray-200 rounded-xl font-semibold flex items-center justify-center gap-2 shadow-sm transition"
             >
               List Your Space
