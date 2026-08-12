@@ -23,7 +23,7 @@ export default function Navbar() {
 
       <div className="flex items-center gap-4">
         <Link
-          to="/venues"
+          to="/"
           className="flex items-center gap-1 text-sm font-medium text-gray-600 hover:text-indigo-600 transition"
         >
           <MapPin className="w-4 h-4" />
