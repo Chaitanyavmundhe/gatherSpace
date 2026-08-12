@@ -29,9 +29,25 @@ const app = express();
 app.use(helmet());
 
 // 2. CORS Configuration
+
+const allowedOrigins = [
+  process.env.CLIENT_URL ? process.env.CLIENT_URL.replace(/\/$/, '') : 'http://localhost:3000',
+  'http://localhost:5173',
+  'http://localhost:3000',
+];
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps, curl, postman)
+      if (!origin) return callback(null, true);
+      
+      const sanitizedOrigin = origin.replace(/\/$/, '');
+      if (allowedOrigins.includes(sanitizedOrigin)) {
+        return callback(null, true);
+      }
+      return callback(new Error('CORS Not Allowed'));
+    },
     credentials: true,
   })
 );
