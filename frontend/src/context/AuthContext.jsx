@@ -59,9 +59,15 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updateProfile = async (updates) => {
+    const res = await API.put("/auth/profile", updates);
+    setUser(res.data.user);
+    return res.data;
+  };
+
   return (
     <AuthContext.Provider
-      value={{ user, setUser, loading, login, register, logout }}
+      value={{ user, setUser, loading, login, register, logout, updateProfile }}
     >
       {!loading && children}
     </AuthContext.Provider>

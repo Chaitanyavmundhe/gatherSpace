@@ -51,14 +51,18 @@ export default function Navbar() {
 
         {user ? (
           <div className="flex items-center gap-3 border-l pl-4 border-gray-200">
-            <div className="text-right">
+            <Link
+              to="/profile"
+              className="text-right hover:opacity-75 transition"
+              title="Edit profile"
+            >
               <p className="text-sm font-semibold text-gray-800 leading-tight">
                 {user.name}
               </p>
               <span className="text-[10px] font-mono uppercase bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
                 {user.role}
               </span>
-            </div>
+            </Link>
             <button
               onClick={handleLogout}
               className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition"

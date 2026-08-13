@@ -9,6 +9,7 @@ import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
+import Profile from "./pages/Profile";
 import VenueDiscovery from "./pages/VenueDiscovery";
 import CreateVenue from "./pages/CreateVenue";
 import EditVenue from "./pages/EditVenue";
@@ -26,6 +27,10 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/venues" element={<VenueDiscovery />} />
+
+            <Route element={<ProtectedRoute />}>
+              <Route path="/profile" element={<Profile />} />
+            </Route>
 
             {/* Protected Routes */}
             <Route element={<ProtectedRoute allowedRoles={["lister"]} />}>
