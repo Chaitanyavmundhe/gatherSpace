@@ -19,6 +19,8 @@ dotenv.config();
 connectDB();
 
 const app = express();
+// Trust Render's reverse proxy for express-rate-limit IP detection
+app.set('trust proxy', 1);
 
 // 1. Security Headers via Helmet
 app.use(helmet());
