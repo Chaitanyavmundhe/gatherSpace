@@ -24,6 +24,7 @@ const sendTokenResponse = (user, statusCode, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        phone: user.phone,
         role: user.role,
       },
     });
@@ -109,7 +110,46 @@ export const getMe = async (req, res) => {
       id: user._id,
       name: user.name,
       email: user.email,
+      phone: user.phone,
       role: user.role,
     },
   });
+};
+
+// @desc    Update logged in user's profile (name and/or phone)
+// @route   PUT /api/v1/auth/profile
+// @access  Private
+export const updateProfile = async (req, res, next) => {
+  try {
+    const { name, phone } = req.body;
+
+    // Both fields are optional — only touch what was actually sent.
+    // This lets the frontend send just a phone update, just a name
+    // update, or both, without wiping out the other field.
+    const updates = {};
+    if (name !== undefined) updates.name = name;
+    if (phone !== undefined) updates.phone = phone;
+
+    const user = await User.findByIdAndUpdate(req.user.id, updates, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    res.status(200).json({
+      success: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
 };
