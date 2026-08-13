@@ -13,11 +13,6 @@ import { initSocket } from './socket.js';
 import bookingRoutes from './routes/bookingRoutes.js';
 import { errorHandler } from './middleware/errorMiddleware.js';
 
-
-
-
-
-
 dotenv.config();
 
 // Connect Database
@@ -29,39 +24,45 @@ const app = express();
 app.use(helmet());
 
 // 2. CORS Configuration
-
 const allowedOrigins = [
-  process.env.CLIENT_URL ? process.env.CLIENT_URL.replace(/\/$/, '') : 'http://localhost:3000',
-  'http://localhost:5173',
+  'https://gather-space.vercel.app',
   'http://localhost:3000',
+  'http://localhost:5173',
 ];
+
+if (process.env.CLIENT_URL) {
+  let clientUrl = process.env.CLIENT_URL.trim();
+  // Guarantee protocol prefix
+  if (!clientUrl.startsWith('http://') && !clientUrl.startsWith('https://')) {
+    clientUrl = `https://${clientUrl}`;
+  }
+  allowedOrigins.push(clientUrl.replace(/\/$/, ''));
+}
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps, curl, postman)
       if (!origin) return callback(null, true);
       
       const sanitizedOrigin = origin.replace(/\/$/, '');
       if (allowedOrigins.includes(sanitizedOrigin)) {
         return callback(null, true);
       }
-      return callback(new Error('CORS Not Allowed'));
+      return callback(new Error(`CORS Not Allowed for origin: ${origin}`));
     },
     credentials: true,
   })
 );
 
-// 3. Rate Limiting (Prevent Brute-Force & DDoS)
+// 3. Rate Limiting
 const limiter = rateLimit({
-  windowMs: 10 * 60 * 1000, // 10 minutes
-  max: 100, // Limit each IP to 100 requests per window
+  windowMs: 10 * 60 * 1000,
+  max: 100,
   message: { success: false, message: 'Too many requests, please try again later.' },
 });
 app.use('/api', limiter);
 
 // Body Parser Middleware
-
 app.use(express.json());
 app.use(cookieParser());
 
@@ -70,7 +71,7 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/venues', venueRoutes);
 app.use('/api/v1/bookings', bookingRoutes);
 
-// Centralized Error Middleware (Must be mounted LAST)
+// Centralized Error Middleware
 app.use(errorHandler);
 
 // HTTP & Socket Server Assembly
