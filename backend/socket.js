@@ -99,6 +99,18 @@ export const initSocket = (server) => {
       io.to(data.roomId).emit('receive_message', payload);
     });
 
+    // Handle live video call initiation notification
+    socket.on('start_video_call', (data) => {
+      const payload = {
+        roomId: data.roomId,
+        venueTitle: data.venueTitle || 'Venue Space',
+        callerName: data.callerName || 'Participant',
+        callerRole: data.callerRole || 'organizer',
+        timestamp: new Date().toISOString(),
+      };
+      io.emit('incoming_video_call', payload);
+    });
+
     socket.on('disconnect', () => {
       console.log(`[SOCKET] Client disconnected: ${socket.id}`);
       if (socket.currentRoomId && roomPresence.has(socket.currentRoomId)) {

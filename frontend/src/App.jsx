@@ -17,6 +17,7 @@ import MyVenues from "./pages/MyVenues";
 import BookingCheckout from "./pages/BookingCheckout";
 import NegotiationChat from "./pages/NegotiationChat";
 import MyBookings from "./pages/MyBookings";
+import MyNegotiations from "./pages/MyNegotiations";
 
 export default function App() {
   return (
@@ -50,6 +51,7 @@ export default function App() {
                 <ProtectedRoute allowedRoles={["organizer", "lister"]} />
               }
             >
+              <Route path="/negotiations" element={<MyNegotiations />} />
               <Route path="/negotiate/:roomId" element={<NegotiationChat />} />
             </Route>
 

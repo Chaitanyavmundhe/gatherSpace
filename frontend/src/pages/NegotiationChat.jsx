@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { io } from "socket.io-client";
 import {
   ShieldAlert,
@@ -21,8 +21,11 @@ let socket;
 
 export default function NegotiationChat() {
   const { roomId } = useParams();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  const autoStartCall = searchParams.get("startCall") === "true";
 
   const [actionsHistory, setActionsHistory] = useState([]);
   const [presence, setPresence] = useState({
@@ -31,7 +34,7 @@ export default function NegotiationChat() {
     users: [],
   });
 
-  const [showVideoCall, setShowVideoCall] = useState(false);
+  const [showVideoCall, setShowVideoCall] = useState(autoStartCall);
   const [selectedAction, setSelectedAction] = useState("OFFER");
   const [priceInput, setPriceInput] = useState("");
   const [selectedNote, setSelectedNote] = useState("Standard Daily Rental Rate");
@@ -141,6 +144,19 @@ export default function NegotiationChat() {
 
   const acceptedPrice = getAcceptedPrice();
 
+  const handleToggleVideoCall = () => {
+    const nextState = !showVideoCall;
+    setShowVideoCall(nextState);
+    if (nextState && socket) {
+      socket.emit("start_video_call", {
+        roomId,
+        callerName: user?.name || "Participant",
+        callerRole: user?.role || "organizer",
+        venueTitle: roomId,
+      });
+    }
+  };
+
   return (
     <div className="min-h-[calc(100vh-65px)] bg-gray-50 p-6 flex flex-col items-center justify-center">
       <div className="w-full max-w-4xl bg-white rounded-2xl shadow-lg border border-gray-100 flex flex-col h-[720px] overflow-hidden">
@@ -171,7 +187,7 @@ export default function NegotiationChat() {
           <div className="flex items-center gap-3">
             {/* Live Video Call Toggle Button */}
             <button
-              onClick={() => setShowVideoCall(!showVideoCall)}
+              onClick={handleToggleVideoCall}
               className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs px-3.5 py-2 rounded-xl transition shadow-xs"
             >
               <Video className="w-4 h-4 animate-pulse text-indigo-200" />
@@ -253,13 +269,23 @@ export default function NegotiationChat() {
             </button>
           </div>
         ) : (
-          <div className="bg-indigo-50 border-b border-indigo-100 px-4 py-2 flex items-center justify-between text-xs text-indigo-900">
+          <div className="bg-indigo-50 border-b border-indigo-100 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs text-indigo-900">
             <div className="flex items-center gap-2">
               <ShieldAlert className="w-4 h-4 text-indigo-600 shrink-0" />
               <span>
-                <strong>Negotiation Workflow:</strong> Conduct video meeting face-to-face. Lister sends negotiated price offer prompt, and Organizer accepts to unlock reservation at the agreed rate.
+                <strong>Negotiation Workflow:</strong> Conduct video call meeting face-to-face. Lister submits negotiated offer prompt, and Organizer accepts to lock agreed rate.
               </span>
             </div>
+
+            {venueId && user?.role === "organizer" && (
+              <button
+                onClick={() => navigate(`/book/${venueId}`)}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] px-3 py-1.5 rounded-lg transition shadow-xs flex items-center gap-1 shrink-0"
+                title="Reserve immediately at base listed rate without negotiation"
+              >
+                <CalendarCheck className="w-3.5 h-3.5" /> Reserve at Standard Rate
+              </button>
+            )}
           </div>
         )}
 
