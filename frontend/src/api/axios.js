@@ -5,4 +5,13 @@ const API = axios.create({
   withCredentials: true,
 });
 
+// Intercept outgoing requests and attach Bearer token
+API.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 export default API;
