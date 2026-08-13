@@ -13,6 +13,7 @@ import {
   Printer,
   Clock,
   Banknote,
+  Video,
 } from "lucide-react";
 
 export default function MyVenues() {
@@ -213,10 +214,18 @@ export default function MyVenues() {
                     </div>
                   </div>
 
-                  <div className="mt-5 grid grid-cols-2 gap-2">
+                  <div className="mt-5 grid grid-cols-3 gap-2">
+                    <button
+                      onClick={() => navigate(`/negotiate/room_${v._id}?startCall=true`)}
+                      className="flex items-center justify-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg font-extrabold text-xs transition shadow-xs"
+                      title="Start or join video meeting for this space"
+                    >
+                      <Video className="w-3.5 h-3.5" />
+                      Video Call
+                    </button>
                     <button
                       onClick={() => navigate(`/edit-venue/${v._id}`)}
-                      className="flex items-center justify-center gap-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 py-2 rounded-lg font-semibold text-xs transition"
+                      className="flex items-center justify-center gap-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 py-2 rounded-lg font-semibold text-xs transition"
                     >
                       <Pencil className="w-3.5 h-3.5" />
                       Edit
@@ -224,7 +233,7 @@ export default function MyVenues() {
                     <button
                       onClick={() => handleDelete(v._id)}
                       disabled={deletingId === v._id}
-                      className="flex items-center justify-center gap-1.5 bg-red-50 text-red-700 hover:bg-red-100 py-2 rounded-lg font-semibold text-xs transition disabled:opacity-50"
+                      className="flex items-center justify-center gap-1 bg-red-50 text-red-700 hover:bg-red-100 py-2 rounded-lg font-semibold text-xs transition disabled:opacity-50"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       {deletingId === v._id ? "Deleting..." : "Delete"}

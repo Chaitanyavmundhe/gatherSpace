@@ -103,12 +103,16 @@ export const initSocket = (server) => {
     socket.on('start_video_call', (data) => {
       const payload = {
         roomId: data.roomId,
-        venueTitle: data.venueTitle || 'Venue Space',
+        callerId: data.callerId || data.user?.id || socket.id,
         callerName: data.callerName || 'Participant',
         callerRole: data.callerRole || 'organizer',
+        venueTitle: data.venueTitle || 'Venue Space',
         timestamp: new Date().toISOString(),
       };
+      // Global app notification
       io.emit('incoming_video_call', payload);
+      // In-room notification
+      io.to(data.roomId).emit('video_call_started', payload);
     });
 
     socket.on('disconnect', () => {

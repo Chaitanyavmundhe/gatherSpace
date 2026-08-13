@@ -19,8 +19,9 @@ export default function Navbar() {
     });
 
     socket.on("incoming_video_call", (data) => {
-      // Don't notify the caller themselves
-      if (data.callerName !== user.name) {
+      const currentUserId = user?._id || user?.id;
+      // Notify only if caller is NOT current user
+      if (data.callerId !== currentUserId && data.callerName !== user?.name) {
         setIncomingCall(data);
       }
     });

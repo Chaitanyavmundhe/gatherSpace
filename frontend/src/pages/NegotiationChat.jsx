@@ -40,6 +40,8 @@ export default function NegotiationChat() {
   const [selectedNote, setSelectedNote] = useState("Standard Daily Rental Rate");
   const [rejectReason, setRejectReason] = useState("Proposed price is outside acceptable budget");
 
+  const [incomingRoomCall, setIncomingRoomCall] = useState(null);
+
   useEffect(() => {
     const SOCKET_URL =
       import.meta.env.VITE_SOCKET_URL || "http://localhost:5050";
@@ -62,6 +64,15 @@ export default function NegotiationChat() {
     // Listen for live presence updates
     socket.on("presence_update", (data) => {
       setPresence(data);
+    });
+
+    // Listen for in-room video call initiation
+    socket.on("video_call_started", (data) => {
+      const currentUserId = user?._id || user?.id;
+      if (data.callerId !== currentUserId && data.callerName !== user?.name) {
+        setIncomingRoomCall(data);
+        setShowVideoCall(true); // Automatically open meeting frame!
+      }
     });
 
     // Listen for structured negotiation actions
@@ -150,6 +161,7 @@ export default function NegotiationChat() {
     if (nextState && socket) {
       socket.emit("start_video_call", {
         roomId,
+        callerId: user?._id || user?.id,
         callerName: user?.name || "Participant",
         callerRole: user?.role || "organizer",
         venueTitle: roomId,
