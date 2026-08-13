@@ -3,6 +3,7 @@ import {
   createBooking,
   getVenueBookingsAvailability,
   getListerBookings,
+  getMyBookings,
   markBookingAsPaid,
   processPayment,
   getBookingReceipt,
@@ -13,6 +14,7 @@ const router = express.Router();
 
 router.get('/venue/:venueId/availability', getVenueBookingsAvailability);
 router.get('/lister', protect, authorize('lister'), getListerBookings);
+router.get('/my', protect, getMyBookings);
 
 router.route('/')
   .post(protect, authorize('organizer'), createBooking);

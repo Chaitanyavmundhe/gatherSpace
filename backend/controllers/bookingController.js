@@ -10,7 +10,7 @@ export const createBooking = async (req, res) => {
   session.startTransaction();
 
   try {
-    const { venueId, startDate, endDate } = req.body;
+    const { venueId, startDate, endDate, negotiatedPrice } = req.body;
 
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -46,8 +46,12 @@ export const createBooking = async (req, res) => {
       });
     }
 
+    const effectiveRate = (negotiatedPrice && Number(negotiatedPrice) > 0)
+      ? Number(negotiatedPrice)
+      : venue.pricePerDay;
+
     const days = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
-    const totalPrice = days * venue.pricePerDay;
+    const totalPrice = days * effectiveRate;
 
     const booking = await Booking.create(
       [
@@ -133,6 +137,28 @@ export const getListerBookings = async (req, res) => {
   }
 };
 
+// @desc    Get all bookings made by the logged-in organizer
+// @route   GET /api/v1/bookings/my
+// @access  Private (Organizers only)
+export const getMyBookings = async (req, res) => {
+  try {
+    const bookings = await Booking.find({ organizer: req.user.id })
+      .populate('venue', 'title pricePerDay location owner')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: bookings.length,
+      data: bookings,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to fetch your reservations',
+    });
+  }
+};
+
 // @desc    Lister marks cash payment done for a reservation and generates receipt
 // @route   POST /api/v1/bookings/:id/mark-paid
 // @access  Private
@@ -157,26 +183,44 @@ export const markBookingAsPaid = async (req, res) => {
 
     const days = Math.max(1, Math.ceil((new Date(booking.endDate) - new Date(booking.startDate)) / (1000 * 60 * 60 * 24)));
 
+    const receiptData = {
+      receiptId: `REC-${booking._id.toString().slice(-6).toUpperCase()}`,
+      transactionId,
+      bookingId: booking._id,
+      venueTitle: booking.venue?.title || 'Event Venue',
+      organizerName: booking.organizer?.name || 'Valued Client',
+      organizerEmail: booking.organizer?.email || '',
+      startDate: booking.startDate.toISOString().split('T')[0],
+      endDate: booking.endDate.toISOString().split('T')[0],
+      days,
+      pricePerDay: booking.venue?.pricePerDay || (booking.totalPrice / days),
+      totalPrice: booking.totalPrice,
+      paymentMethod: 'cash_offline',
+      paymentStatus: 'paid',
+      paidAt: booking.paidAt,
+    };
+
+    // Emit real-time payment_approved socket event
+    try {
+      const { getIO } = await import('../socket.js');
+      const io = getIO();
+      if (io) {
+        io.emit('payment_approved', {
+          bookingId: booking._id,
+          organizerId: booking.organizer?._id?.toString() || booking.organizer?.toString(),
+          venueTitle: booking.venue?.title,
+          receipt: receiptData,
+        });
+      }
+    } catch (e) {
+      // Ignore socket emit if socket not active
+    }
+
     res.status(200).json({
       success: true,
       message: 'Payment confirmed in offline cash and receipt generated',
       data: booking,
-      receipt: {
-        receiptId: `REC-${booking._id.toString().slice(-6).toUpperCase()}`,
-        transactionId,
-        bookingId: booking._id,
-        venueTitle: booking.venue?.title || 'Event Venue',
-        organizerName: booking.organizer?.name || 'Valued Client',
-        organizerEmail: booking.organizer?.email || '',
-        startDate: booking.startDate.toISOString().split('T')[0],
-        endDate: booking.endDate.toISOString().split('T')[0],
-        days,
-        pricePerDay: booking.venue?.pricePerDay || (booking.totalPrice / days),
-        totalPrice: booking.totalPrice,
-        paymentMethod: 'cash_offline',
-        paymentStatus: 'paid',
-        paidAt: booking.paidAt,
-      },
+      receipt: receiptData,
     });
   } catch (error) {
     res.status(500).json({

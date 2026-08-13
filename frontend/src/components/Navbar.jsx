@@ -30,6 +30,16 @@ export default function Navbar() {
           Explore Spaces
         </Link>
 
+        {user?.role?.toLowerCase() === "organizer" && (
+          <Link
+            to="/my-bookings"
+            className="flex items-center gap-1 text-sm font-medium text-gray-600 hover:text-indigo-600 transition"
+          >
+            <Building2 className="w-4 h-4 text-indigo-600" />
+            My Reservations
+          </Link>
+        )}
+
         {user?.role?.toLowerCase() === "lister" && (
           <>
             <Link

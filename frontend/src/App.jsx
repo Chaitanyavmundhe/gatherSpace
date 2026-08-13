@@ -16,6 +16,7 @@ import EditVenue from "./pages/EditVenue";
 import MyVenues from "./pages/MyVenues";
 import BookingCheckout from "./pages/BookingCheckout";
 import NegotiationChat from "./pages/NegotiationChat";
+import MyBookings from "./pages/MyBookings";
 
 export default function App() {
   return (
@@ -41,6 +42,7 @@ export default function App() {
 
             <Route element={<ProtectedRoute allowedRoles={["organizer"]} />}>
               <Route path="/book/:venueId" element={<BookingCheckout />} />
+              <Route path="/my-bookings" element={<MyBookings />} />
             </Route>
 
             <Route

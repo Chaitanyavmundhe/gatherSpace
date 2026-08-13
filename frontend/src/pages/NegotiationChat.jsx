@@ -11,6 +11,9 @@ import {
   Radio,
   ArrowLeft,
   CalendarCheck,
+  Video,
+  X,
+  Sparkles,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
@@ -28,6 +31,7 @@ export default function NegotiationChat() {
     users: [],
   });
 
+  const [showVideoCall, setShowVideoCall] = useState(false);
   const [selectedAction, setSelectedAction] = useState("OFFER");
   const [priceInput, setPriceInput] = useState("");
   const [selectedNote, setSelectedNote] = useState("Standard Daily Rental Rate");
@@ -126,11 +130,23 @@ export default function NegotiationChat() {
     return lastOffer ? lastOffer.offeredPrice : null;
   };
 
+  const isOfferAccepted = () => {
+    return actionsHistory.some((a) => a.actionType === "ACCEPT");
+  };
+
+  const getAcceptedPrice = () => {
+    if (!isOfferAccepted()) return null;
+    return getLatestOfferPrice();
+  };
+
+  const acceptedPrice = getAcceptedPrice();
+
   return (
     <div className="min-h-[calc(100vh-65px)] bg-gray-50 p-6 flex flex-col items-center justify-center">
-      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-lg border border-gray-100 flex flex-col h-[680px] overflow-hidden">
-        {/* Header with Room ID & Real-Time Presence Badges */}
-        <div className="p-4 bg-slate-900 text-white flex items-center justify-between">
+      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-lg border border-gray-100 flex flex-col h-[720px] overflow-hidden">
+        
+        {/* Header with Room ID, Presence & Live Video Call Button */}
+        <div className="p-4 bg-slate-900 text-white flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate("/venues")}
@@ -143,89 +159,109 @@ export default function NegotiationChat() {
               <div className="flex items-center gap-2">
                 <Radio className="w-4 h-4 text-emerald-400 animate-pulse" />
                 <h2 className="font-bold text-base tracking-tight">
-                  Structured Negotiation Hub
+                  Negotiation & Live Video Hub
                 </h2>
               </div>
               <p className="text-xs text-slate-400 font-mono">
-                Room ID: {roomId}
+                Room: {roomId}
               </p>
             </div>
           </div>
 
-          {/* User & Lister Live Indicators */}
-          <div className="flex items-center gap-4 text-xs font-semibold">
-            {/* Organizer Status */}
-            <div className="flex items-center gap-1.5 bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700">
-              <span
-                className={`w-2.5 h-2.5 rounded-full ${
-                  presence.organizerLive
-                    ? "bg-emerald-500 animate-ping"
-                    : "bg-gray-500"
-                }`}
-              ></span>
-              <span
-                className={`w-2.5 h-2.5 rounded-full ${
-                  presence.organizerLive ? "bg-emerald-500" : "bg-gray-500"
-                }`}
-              ></span>
-              <span className="text-slate-200">Organizer:</span>
-              <span
-                className={
-                  presence.organizerLive
-                    ? "text-emerald-400 font-bold"
-                    : "text-slate-400"
-                }
-              >
-                {presence.organizerLive ? "LIVE" : "Offline"}
-              </span>
-            </div>
-
-            {/* Lister Status */}
-            <div className="flex items-center gap-1.5 bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700">
-              <span
-                className={`w-2.5 h-2.5 rounded-full ${
-                  presence.listerLive
-                    ? "bg-emerald-500 animate-ping"
-                    : "bg-gray-500"
-                }`}
-              ></span>
-              <span
-                className={`w-2.5 h-2.5 rounded-full ${
-                  presence.listerLive ? "bg-emerald-500" : "bg-gray-500"
-                }`}
-              ></span>
-              <span className="text-slate-200">Lister:</span>
-              <span
-                className={
-                  presence.listerLive
-                    ? "text-emerald-400 font-bold"
-                    : "text-slate-400"
-                }
-              >
-                {presence.listerLive ? "LIVE" : "Offline"}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Structured Protocol Notice Banner */}
-        <div className="bg-indigo-50 border-b border-indigo-100 px-4 py-2 flex items-center justify-between text-xs text-indigo-900">
-          <div className="flex items-center gap-2">
-            <ShieldAlert className="w-4 h-4 text-indigo-600 shrink-0" />
-            <span>
-              <strong>Structured Protocol Enforced:</strong> Unstructured free-text chat is disabled. All interactions are conducted via official Offer, Counter-Offer, Accept, and Reject protocol commands.
-            </span>
-          </div>
-          {venueId && (
+          <div className="flex items-center gap-3">
+            {/* Live Video Call Toggle Button */}
             <button
-              onClick={() => navigate(`/book/${venueId}`)}
-              className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1 rounded text-xs transition"
+              onClick={() => setShowVideoCall(!showVideoCall)}
+              className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs px-3.5 py-2 rounded-xl transition shadow-xs"
             >
-              <CalendarCheck className="w-3.5 h-3.5" />
-              Reserve Space
+              <Video className="w-4 h-4 animate-pulse text-indigo-200" />
+              {showVideoCall ? "Hide Video Meeting" : "Start Live Video Call"}
             </button>
-          )}
+
+            {/* Presence Indicators */}
+            <div className="flex items-center gap-3 text-xs font-semibold">
+              <div className="flex items-center gap-1.5 bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700">
+                <span
+                  className={`w-2.5 h-2.5 rounded-full ${
+                    presence.organizerLive ? "bg-emerald-500" : "bg-gray-500"
+                  }`}
+                ></span>
+                <span className="text-slate-200">Organizer:</span>
+                <span className={presence.organizerLive ? "text-emerald-400 font-bold" : "text-slate-400"}>
+                  {presence.organizerLive ? "LIVE" : "Offline"}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1.5 bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700">
+                <span
+                  className={`w-2.5 h-2.5 rounded-full ${
+                    presence.listerLive ? "bg-emerald-500" : "bg-gray-500"
+                  }`}
+                ></span>
+                <span className="text-slate-200">Lister:</span>
+                <span className={presence.listerLive ? "text-emerald-400 font-bold" : "text-slate-400"}>
+                  {presence.listerLive ? "LIVE" : "Offline"}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
+
+        {/* Live Video Call Modal Container */}
+        {showVideoCall && (
+          <div className="bg-slate-950 p-3 border-b border-slate-800 space-y-2 relative">
+            <div className="flex items-center justify-between text-xs text-slate-300 px-1 font-semibold">
+              <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
+                <Video className="w-4 h-4" /> HD Video Meeting Room Active
+              </span>
+              <button
+                onClick={() => setShowVideoCall(false)}
+                className="text-slate-400 hover:text-white flex items-center gap-1 text-xs"
+              >
+                <X className="w-4 h-4" /> Close Meeting View
+              </button>
+            </div>
+            <div className="w-full h-80 rounded-xl overflow-hidden border border-slate-800">
+              <iframe
+                src={`https://meet.jit.si/gatherspace_room_${roomId.replace(/[^a-zA-Z0-9]/g, "")}#config.prejoinPageEnabled=false&interfaceConfig.TOOLBAR_BUTTONS=['microphone','camera','desktop','fullscreen','fudeviceselection','hangup']`}
+                title="Live Video Meeting"
+                className="w-full h-full border-none"
+                allow="camera; microphone; display-capture; autoplay; clipboard-write"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Negotiated Price Banner & Reserve Button */}
+        {acceptedPrice && venueId ? (
+          <div className="bg-emerald-50 border-b border-emerald-200 p-4 flex flex-wrap items-center justify-between gap-3 text-xs text-emerald-950">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-emerald-600 shrink-0" />
+              <div>
+                <strong className="text-sm font-black text-emerald-900 block">
+                  Negotiated Rate Agreed: ₹{acceptedPrice.toLocaleString("en-IN")}/day
+                </strong>
+                <span>The rate has been officially accepted. Click to reserve space at this negotiated price.</span>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate(`/book/${venueId}?agreedPrice=${acceptedPrice}`)}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs px-5 py-2.5 rounded-xl transition shadow-sm flex items-center gap-1.5"
+            >
+              <CalendarCheck className="w-4 h-4" />
+              Reserve at Negotiated Price (₹{acceptedPrice.toLocaleString("en-IN")}/day)
+            </button>
+          </div>
+        ) : (
+          <div className="bg-indigo-50 border-b border-indigo-100 px-4 py-2 flex items-center justify-between text-xs text-indigo-900">
+            <div className="flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 text-indigo-600 shrink-0" />
+              <span>
+                <strong>Negotiation Workflow:</strong> Conduct video meeting face-to-face. Lister sends negotiated price offer prompt, and Organizer accepts to unlock reservation at the agreed rate.
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Structured Action Feed */}
         <div className="flex-1 p-5 overflow-y-auto space-y-4 bg-slate-50/50">
@@ -235,10 +271,10 @@ export default function NegotiationChat() {
                 <Tag className="w-6 h-6" />
               </div>
               <p className="text-sm font-medium text-gray-600">
-                No negotiation protocol actions recorded yet.
+                No negotiation offer prompts sent yet.
               </p>
               <p className="text-xs text-gray-400">
-                Use the structured controls below to submit an initial offer or proposal.
+                Launch the Live Video Call above to negotiate face-to-face, then submit your price offer prompt below.
               </p>
             </div>
           ) : (
@@ -271,22 +307,22 @@ export default function NegotiationChat() {
                     <div className="flex items-center gap-2">
                       {action.actionType === "OFFER" && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">
-                          <Tag className="w-3 h-3" /> Initial Offer
+                          <Tag className="w-3 h-3" /> Negotiated Offer Prompt
                         </span>
                       )}
                       {action.actionType === "COUNTER_OFFER" && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-purple-100 text-purple-800 border border-purple-200">
-                          <TrendingUp className="w-3 h-3" /> Counter Offer
+                          <TrendingUp className="w-3 h-3" /> Counter Offer Prompt
                         </span>
                       )}
                       {action.actionType === "ACCEPT" && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                          <CheckCircle2 className="w-3 h-3" /> Accepted
+                          <CheckCircle2 className="w-3 h-3" /> Rate Accepted
                         </span>
                       )}
                       {action.actionType === "REJECT" && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-red-100 text-red-800 border border-red-200">
-                          <XCircle className="w-3 h-3" /> Rejected
+                          <XCircle className="w-3 h-3" /> Rate Rejected
                         </span>
                       )}
 
@@ -309,7 +345,7 @@ export default function NegotiationChat() {
           )}
         </div>
 
-        {/* Structured Action Input Bar (Free-form text disabled) */}
+        {/* Structured Action Input Bar */}
         <form
           onSubmit={handleSendStructuredAction}
           className="p-4 bg-white border-t border-gray-200 space-y-3"
@@ -325,7 +361,7 @@ export default function NegotiationChat() {
                   : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
               }`}
             >
-              <Tag className="w-3.5 h-3.5" /> Submit Offer
+              <Tag className="w-3.5 h-3.5" /> Negotiated Offer Prompt
             </button>
 
             <button
@@ -355,7 +391,7 @@ export default function NegotiationChat() {
                   : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
               }`}
             >
-              <CheckCircle2 className="w-3.5 h-3.5" /> Accept Offer
+              <CheckCircle2 className="w-3.5 h-3.5" /> Accept Rate
             </button>
 
             <button
@@ -367,16 +403,16 @@ export default function NegotiationChat() {
                   : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
               }`}
             >
-              <XCircle className="w-3.5 h-3.5" /> Reject Offer
+              <XCircle className="w-3.5 h-3.5" /> Reject Rate
             </button>
           </div>
 
-          {/* Inputs tailored to selected structured action */}
+          {/* Inputs tailored to selected action */}
           {(selectedAction === "OFFER" || selectedAction === "COUNTER_OFFER") && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
               <div>
                 <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1">
-                  Proposed Amount (₹ / Day)
+                  Negotiated Amount (₹ / Day)
                 </label>
                 <input
                   type="number"
@@ -390,18 +426,17 @@ export default function NegotiationChat() {
 
               <div>
                 <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1">
-                  Preset Proposal Term / Note
+                  Terms Note
                 </label>
                 <select
                   value={selectedNote}
                   onChange={(e) => setSelectedNote(e.target.value)}
                   className="w-full p-2.5 border rounded-lg text-sm bg-white focus:outline-none"
                 >
-                  <option value="Standard Daily Rental Rate">Standard Daily Rental Rate</option>
+                  <option value="Agreed Negotiated Daily Rate">Agreed Negotiated Daily Rate</option>
                   <option value="Includes Audiovisual & Stage Equipment">Includes Audiovisual & Stage Equipment</option>
                   <option value="Full Event Setup & Clean-up Package">Full Event Setup & Clean-up Package</option>
-                  <option value="Weekend Prime Rate Proposal">Weekend Prime Rate Proposal</option>
-                  <option value="Special Discounted Extended Booking">Special Discounted Extended Booking</option>
+                  <option value="Special Discounted Extended Booking Rate">Special Discounted Extended Booking Rate</option>
                 </select>
               </div>
             </div>
@@ -410,7 +445,7 @@ export default function NegotiationChat() {
           {selectedAction === "ACCEPT" && (
             <div className="bg-emerald-50 text-emerald-800 p-3 rounded-lg text-xs font-semibold flex items-center justify-between">
               <span>
-                Confirm acceptance of the active negotiation price proposal:{" "}
+                Confirm acceptance of active negotiated rate:{" "}
                 <strong className="font-mono text-emerald-950">
                   ₹{getLatestOfferPrice() ? getLatestOfferPrice().toLocaleString("en-IN") : "---"}/day
                 </strong>
@@ -421,30 +456,27 @@ export default function NegotiationChat() {
           {selectedAction === "REJECT" && (
             <div>
               <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1">
-                Decline Reason Preset
+                Decline Reason
               </label>
               <select
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
                 className="w-full p-2.5 border rounded-lg text-sm bg-white focus:outline-none"
               >
-                <option value="Proposed price is outside acceptable budget">
-                  Proposed price is outside acceptable budget
+                <option value="Negotiated price is outside budget">
+                  Negotiated price is outside budget
                 </option>
                 <option value="Requested dates are not available">
                   Requested dates are not available
                 </option>
-                <option value="Venue capacity and terms do not match requirements">
-                  Venue capacity and terms do not match requirements
-                </option>
-                <option value="Declined after internal venue review">
-                  Declined after internal venue review
+                <option value="Declined after video call review">
+                  Declined after video call review
                 </option>
               </select>
             </div>
           )}
 
-          {/* Submit Protocol Action Button */}
+          {/* Submit Action Button */}
           <button
             type="submit"
             className={`w-full py-3 rounded-xl font-bold text-white text-sm transition shadow-sm ${
@@ -457,11 +489,12 @@ export default function NegotiationChat() {
                 : "bg-red-600 hover:bg-red-700"
             }`}
           >
-            Transmit Protocol Command ({selectedAction.replace("_", " ")})
+            Send {selectedAction.replace("_", " ")} Prompt
           </button>
         </form>
       </div>
     </div>
   );
 }
+
 

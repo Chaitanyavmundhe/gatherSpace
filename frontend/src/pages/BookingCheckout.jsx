@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import API from '../api/axios';
 import {
   ShieldCheck,
@@ -9,14 +9,20 @@ import {
   IndianRupee,
   ArrowLeft,
   Clock,
+  Tag,
+  Sparkles,
 } from 'lucide-react';
 import AvailabilityCalendar from '../components/AvailabilityCalendar';
 import { useAuth } from '../context/AuthContext';
 
 export default function BookingCheckout() {
   const { venueId } = useParams();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  const agreedPriceParam = searchParams.get('agreedPrice');
+  const negotiatedPrice = agreedPriceParam && Number(agreedPriceParam) > 0 ? Number(agreedPriceParam) : null;
 
   const [venue, setVenue] = useState(null);
   const [startDate, setStartDate] = useState('');
@@ -54,7 +60,7 @@ export default function BookingCheckout() {
   };
 
   const daysCount = calculateDays();
-  const pricePerDay = venue?.pricePerDay || 0;
+  const pricePerDay = negotiatedPrice || venue?.pricePerDay || 0;
   const grandTotal = daysCount * pricePerDay;
 
   const handleOfflineBooking = async (e) => {
@@ -79,6 +85,7 @@ export default function BookingCheckout() {
         startDate,
         endDate,
         paymentMethod: 'cash_offline',
+        negotiatedPrice: negotiatedPrice || undefined,
       });
 
       setReservationSuccess({
@@ -127,7 +134,12 @@ export default function BookingCheckout() {
                   <span>Capacity: {venue.capacity} guests</span>
                   <span className="text-emerald-600 flex items-center font-mono font-bold">
                     <IndianRupee className="w-3.5 h-3.5" />
-                    {venue.pricePerDay.toLocaleString('en-IN')}/day
+                    {pricePerDay.toLocaleString('en-IN')}/day
+                    {negotiatedPrice && (
+                      <span className="ml-1.5 line-through text-gray-400 text-[11px]">
+                        ₹{venue.pricePerDay.toLocaleString('en-IN')}
+                      </span>
+                    )}
                   </span>
                 </div>
               </div>
@@ -151,6 +163,18 @@ export default function BookingCheckout() {
               Offline Cash Reservation
             </h2>
 
+            {negotiatedPrice && (
+              <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 p-3 rounded-xl text-xs font-bold flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+                  Negotiated Rate Applied
+                </span>
+                <span className="font-mono text-emerald-800">
+                  ₹{negotiatedPrice.toLocaleString('en-IN')}/day
+                </span>
+              </div>
+            )}
+
             {error && (
               <div className="flex items-start gap-2 bg-red-50 text-red-700 p-3 rounded-lg text-xs font-medium">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
@@ -166,12 +190,13 @@ export default function BookingCheckout() {
                 </div>
 
                 <p className="text-xs text-emerald-900 leading-relaxed">
-                  Your dates are locked. Please pay <strong>₹{reservationSuccess.totalPrice.toLocaleString('en-IN')}</strong> in cash to the venue lister upon arrival/check-in.
+                  Your dates are locked at the agreed rate. Please pay <strong>₹{reservationSuccess.totalPrice.toLocaleString('en-IN')}</strong> in cash to the venue lister upon arrival/check-in.
                 </p>
 
                 <div className="bg-white p-3 rounded-xl border border-emerald-100 text-xs font-mono space-y-1 text-gray-700">
                   <div>Ref ID: {reservationSuccess.bookingId}</div>
                   <div>Dates: {reservationSuccess.startDate} to {reservationSuccess.endDate}</div>
+                  <div>Rate: ₹{pricePerDay.toLocaleString('en-IN')}/day</div>
                   <div>Status: <span className="text-amber-600 font-bold">Unpaid (Cash Pending)</span></div>
                 </div>
 
@@ -181,10 +206,10 @@ export default function BookingCheckout() {
 
                 <button
                   type="button"
-                  onClick={() => navigate('/venues')}
+                  onClick={() => navigate('/my-bookings')}
                   className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition"
                 >
-                  Return to Discovery
+                  View My Reservations & Status
                 </button>
               </div>
             ) : (
@@ -210,15 +235,17 @@ export default function BookingCheckout() {
                   <Clock className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                   <div>
                     <strong className="block font-bold">Offline Cash Collection:</strong>
-                    Payment will be collected directly by the venue lister in cash. The receipt will be generated when the lister marks payment done.
+                    Payment will be collected directly by the venue lister in cash. The receipt will be unlocked when the lister marks payment done.
                   </div>
                 </div>
 
                 {/* Price Calculation Summary */}
                 <div className="border-t pt-3 space-y-2 text-xs text-gray-600">
                   <div className="flex justify-between">
-                    <span>Rate per day:</span>
-                    <span className="font-mono font-semibold">₹{pricePerDay.toLocaleString('en-IN')}</span>
+                    <span>Applied Rate:</span>
+                    <span className="font-mono font-semibold">
+                      ₹{pricePerDay.toLocaleString('en-IN')}/day
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span>Duration:</span>
