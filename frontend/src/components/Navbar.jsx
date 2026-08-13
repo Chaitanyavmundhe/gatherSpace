@@ -31,13 +31,22 @@ export default function Navbar() {
         </Link>
 
         {user?.role?.toLowerCase() === "lister" && (
-          <Link
-            to="/create-venue"
-            className="flex items-center gap-1 text-sm font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition"
-          >
-            <PlusCircle className="w-4 h-4" />
-            List Venue
-          </Link>
+          <>
+            <Link
+              to="/my-venues"
+              className="flex items-center gap-1 text-sm font-medium text-gray-600 hover:text-indigo-600 transition"
+            >
+              <Building2 className="w-4 h-4" />
+              My Venues
+            </Link>
+            <Link
+              to="/create-venue"
+              className="flex items-center gap-1 text-sm font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition"
+            >
+              <PlusCircle className="w-4 h-4" />
+              List Venue
+            </Link>
+          </>
         )}
 
         {user ? (

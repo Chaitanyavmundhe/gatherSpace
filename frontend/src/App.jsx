@@ -11,6 +11,8 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import VenueDiscovery from "./pages/VenueDiscovery";
 import CreateVenue from "./pages/CreateVenue";
+import EditVenue from "./pages/EditVenue";
+import MyVenues from "./pages/MyVenues";
 import BookingCheckout from "./pages/BookingCheckout";
 import NegotiationChat from "./pages/NegotiationChat";
 
@@ -28,6 +30,8 @@ export default function App() {
             {/* Protected Routes */}
             <Route element={<ProtectedRoute allowedRoles={["lister"]} />}>
               <Route path="/create-venue" element={<CreateVenue />} />
+              <Route path="/edit-venue/:venueId" element={<EditVenue />} />
+              <Route path="/my-venues" element={<MyVenues />} />
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={["organizer"]} />}>
