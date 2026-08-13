@@ -6,12 +6,11 @@ import Venue from '../models/Venue.js';
 // @route   POST /api/v1/bookings
 // @access  Private (Organizers only)
 export const createBooking = async (req, res) => {
-  // Start a MongoDB Client Session for ACID Transaction
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    const { venueId, startDate, endDate, paymentMethod = 'credit_card' } = req.body;
+    const { venueId, startDate, endDate } = req.body;
 
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -22,7 +21,6 @@ export const createBooking = async (req, res) => {
       return res.status(400).json({ success: false, message: 'End date must be after start date' });
     }
 
-    // 1. Fetch Venue to verify existence and compute total price
     const venue = await Venue.findById(venueId).session(session);
     if (!venue) {
       await session.abortTransaction();
@@ -30,7 +28,6 @@ export const createBooking = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Venue not found' });
     }
 
-    // 2. CRITICAL: Check for overlapping bookings (Double-Booking Guard)
     const existingBooking = await Booking.findOne({
       venue: venueId,
       status: 'confirmed',
@@ -49,12 +46,9 @@ export const createBooking = async (req, res) => {
       });
     }
 
-    // 3. Compute duration and total price
     const days = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
     const totalPrice = days * venue.pricePerDay;
-    const transactionId = `TXN-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-    // 4. Create Booking inside Transaction
     const booking = await Booking.create(
       [
         {
@@ -64,36 +58,22 @@ export const createBooking = async (req, res) => {
           endDate: end,
           totalPrice,
           status: 'confirmed',
-          paymentStatus: 'paid',
-          paymentMethod,
-          transactionId,
-          paidAt: new Date(),
+          paymentStatus: 'unpaid',
+          paymentMethod: 'cash_offline',
         },
       ],
       { session }
     );
 
-    // Commit changes permanently to database
     await session.commitTransaction();
     session.endSession();
 
     res.status(201).json({
       success: true,
       data: booking[0],
-      receipt: {
-        bookingId: booking[0]._id,
-        transactionId,
-        venueTitle: venue.title,
-        pricePerDay: venue.pricePerDay,
-        days,
-        totalPrice,
-        paidAt: booking[0].paidAt,
-        paymentMethod,
-        paymentStatus: 'paid',
-      },
+      message: 'Venue reserved successfully. Offline cash payment pending.',
     });
   } catch (error) {
-    // Roll back all operations in case of any unhandled error
     await session.abortTransaction();
     session.endSession();  
     res.status(500).json({
@@ -127,25 +107,51 @@ export const getVenueBookingsAvailability = async (req, res) => {
   }
 };
 
-// @desc    Process payment for booking and generate receipt
-// @route   POST /api/v1/bookings/:id/pay
-// @access  Private
-export const processPayment = async (req, res) => {
+// @desc    Get all bookings for venues owned by the logged-in Lister
+// @route   GET /api/v1/bookings/lister
+// @access  Private (Listers only)
+export const getListerBookings = async (req, res) => {
   try {
-    const { paymentMethod = 'credit_card' } = req.body;
-    const booking = await Booking.findById(req.params.id).populate('venue organizer', 'title pricePerDay name email');
+    const listerVenues = await Venue.find({ owner: req.user.id }).select('_id');
+    const venueIds = listerVenues.map((v) => v._id);
+
+    const bookings = await Booking.find({ venue: { $in: venueIds } })
+      .populate('venue', 'title pricePerDay location')
+      .populate('organizer', 'name email phone')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: bookings.length,
+      data: bookings,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to fetch lister reservations',
+    });
+  }
+};
+
+// @desc    Lister marks cash payment done for a reservation and generates receipt
+// @route   POST /api/v1/bookings/:id/mark-paid
+// @access  Private
+export const markBookingAsPaid = async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id)
+      .populate('venue', 'title pricePerDay owner location')
+      .populate('organizer', 'name email phone');
 
     if (!booking) {
       return res.status(404).json({ success: false, message: 'Booking not found' });
     }
 
-    const transactionId = `TXN-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const transactionId = `TXN-CASH-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
     booking.paymentStatus = 'paid';
-    booking.paymentMethod = paymentMethod;
+    booking.paymentMethod = 'cash_offline';
     booking.transactionId = transactionId;
     booking.paidAt = new Date();
-    booking.status = 'confirmed';
 
     await booking.save();
 
@@ -153,21 +159,21 @@ export const processPayment = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Payment processed successfully',
+      message: 'Payment confirmed in offline cash and receipt generated',
       data: booking,
       receipt: {
         receiptId: `REC-${booking._id.toString().slice(-6).toUpperCase()}`,
         transactionId,
         bookingId: booking._id,
         venueTitle: booking.venue?.title || 'Event Venue',
-        organizerName: booking.organizer?.name || req.user.name,
-        organizerEmail: booking.organizer?.email || req.user.email,
-        startDate: booking.startDate,
-        endDate: booking.endDate,
+        organizerName: booking.organizer?.name || 'Valued Client',
+        organizerEmail: booking.organizer?.email || '',
+        startDate: booking.startDate.toISOString().split('T')[0],
+        endDate: booking.endDate.toISOString().split('T')[0],
         days,
         pricePerDay: booking.venue?.pricePerDay || (booking.totalPrice / days),
         totalPrice: booking.totalPrice,
-        paymentMethod,
+        paymentMethod: 'cash_offline',
         paymentStatus: 'paid',
         paidAt: booking.paidAt,
       },
@@ -175,10 +181,15 @@ export const processPayment = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error.message || 'Payment processing failed',
+      message: error.message || 'Failed to mark payment as done',
     });
   }
 };
+
+// @desc    Process payment for booking and generate receipt
+// @route   POST /api/v1/bookings/:id/pay
+// @access  Private
+export const processPayment = markBookingAsPaid;
 
 // @desc    Get booking payment receipt details
 // @route   GET /api/v1/bookings/:id/receipt
@@ -197,19 +208,19 @@ export const getBookingReceipt = async (req, res) => {
       success: true,
       data: {
         receiptId: `REC-${booking._id.toString().slice(-6).toUpperCase()}`,
-        transactionId: booking.transactionId || `TXN-${booking._id.toString().slice(-8).toUpperCase()}`,
+        transactionId: booking.transactionId || `TXN-CASH-${booking._id.toString().slice(-8).toUpperCase()}`,
         bookingId: booking._id,
         venueTitle: booking.venue?.title || 'Event Venue',
         venueAddress: booking.venue?.location?.formattedAddress || 'Location details on request',
         organizerName: booking.organizer?.name || 'Valued Client',
         organizerEmail: booking.organizer?.email || '',
-        startDate: booking.startDate,
-        endDate: booking.endDate,
+        startDate: booking.startDate.toISOString().split('T')[0],
+        endDate: booking.endDate.toISOString().split('T')[0],
         days,
         pricePerDay: booking.venue?.pricePerDay || (booking.totalPrice / days),
         totalPrice: booking.totalPrice,
-        paymentMethod: booking.paymentMethod || 'credit_card',
-        paymentStatus: booking.paymentStatus || 'paid',
+        paymentMethod: booking.paymentMethod || 'cash_offline',
+        paymentStatus: booking.paymentStatus || 'unpaid',
         paidAt: booking.paidAt || booking.createdAt,
       },
     });

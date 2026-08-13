@@ -32,11 +32,11 @@ const bookingSchema = new mongoose.Schema(
     paymentStatus: {
       type: String,
       enum: ['unpaid', 'paid', 'failed'],
-      default: 'paid',
+      default: 'unpaid',
     },
     paymentMethod: {
       type: String,
-      default: 'credit_card',
+      default: 'cash_offline',
     },
     transactionId: {
       type: String,
