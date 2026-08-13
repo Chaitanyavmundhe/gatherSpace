@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import API from "../api/axios";
-import { MapPin, Search, Users, IndianRupee } from "lucide-react";
+import { Search, Users, IndianRupee, Map } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import DiscoveryMap from "../components/DiscoveryMap";
 
 export default function VenueDiscovery() {
   const [longitude, setLongitude] = useState(75.3433); // Chhatrapati Sambhajinagar default
@@ -11,11 +12,11 @@ export default function VenueDiscovery() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const fetchVenues = async () => {
+  const fetchVenues = useCallback(async (lng = longitude, lat = latitude, dist = distance) => {
     setLoading(true);
     try {
       const res = await API.get(
-        `/venues/radius/${longitude}/${latitude}/${distance}`,
+        `/venues/radius/${lng}/${lat}/${dist}`,
       );
       setVenues(res.data.data);
     } catch (err) {
@@ -23,6 +24,12 @@ export default function VenueDiscovery() {
     } finally {
       setLoading(false);
     }
+  }, [longitude, latitude, distance]);
+
+  const handleLocationChange = (newLat, newLng) => {
+    setLatitude(newLat);
+    setLongitude(newLng);
+    fetchVenues(newLng, newLat, distance);
   };
 
   useEffect(() => {
@@ -35,40 +42,24 @@ export default function VenueDiscovery() {
         {/* Header & Spatial Filter Controls */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-wrap gap-4 items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <Map className="w-6 h-6 text-indigo-600" />
               Discover Venues
             </h1>
             <p className="text-sm text-gray-500">
-              Real-time geospatial search backed by MongoDB 2dsphere
+              Interactive map location selection & geospatial radius search
             </p>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1 bg-gray-100 px-3 py-2 rounded-lg">
-              <MapPin className="w-4 h-4 text-indigo-600" />
-              <input
-                type="number"
-                step="any"
-                value={longitude}
-                onChange={(e) => setLongitude(e.target.value)}
-                className="w-20 bg-transparent text-sm font-mono focus:outline-none"
-                placeholder="Lng"
-              />
-              <span className="text-gray-400">,</span>
-              <input
-                type="number"
-                step="any"
-                value={latitude}
-                onChange={(e) => setLatitude(e.target.value)}
-                className="w-20 bg-transparent text-sm font-mono focus:outline-none"
-                placeholder="Lat"
-              />
-            </div>
-
             <select
               value={distance}
-              onChange={(e) => setDistance(e.target.value)}
-              className="bg-gray-100 px-3 py-2 rounded-lg text-sm focus:outline-none"
+              onChange={(e) => {
+                const newDist = e.target.value;
+                setDistance(newDist);
+                fetchVenues(longitude, latitude, newDist);
+              }}
+              className="bg-gray-100 px-4 py-2.5 rounded-lg text-sm font-medium focus:outline-none border border-gray-200"
             >
               <option value="10">Within 10 km</option>
               <option value="25">Within 25 km</option>
@@ -77,14 +68,23 @@ export default function VenueDiscovery() {
             </select>
 
             <button
-              onClick={fetchVenues}
-              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition"
+              onClick={() => fetchVenues(longitude, latitude, distance)}
+              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg font-medium text-sm transition"
             >
               <Search className="w-4 h-4" />
-              Find Spaces
+              Refresh Venues
             </button>
           </div>
         </div>
+
+        {/* Interactive Map Picker Component */}
+        <DiscoveryMap
+          latitude={latitude}
+          longitude={longitude}
+          distance={distance}
+          venues={venues}
+          onLocationChange={handleLocationChange}
+        />
 
         {/* Venue Cards Grid */}
         {loading ? (

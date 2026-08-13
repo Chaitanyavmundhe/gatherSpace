@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Building2, UserCheck, LogIn } from "lucide-react";
+import { Building2, UserCheck, LogIn, Eye, EyeOff } from "lucide-react";
 
 export default function Login() {
   const [isRegister, setIsRegister] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [role, setRole] = useState("organizer");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -22,6 +25,18 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    if (isRegister) {
+      if (password !== confirmPassword) {
+        setError("Passwords do not match. Please re-type password.");
+        return;
+      }
+      if (password.length < 6) {
+        setError("Password must be at least 6 characters long.");
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
@@ -98,15 +113,59 @@ export default function Login() {
             <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">
               Password
             </label>
-            <input
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-2.5 border rounded-lg text-sm focus:outline-none focus:border-indigo-500"
-              required
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full p-2.5 pr-10 border rounded-lg text-sm focus:outline-none focus:border-indigo-500"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 focus:outline-none"
+                title={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+              </button>
+            </div>
           </div>
+
+          {isRegister && (
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">
+                Confirm Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full p-2.5 pr-10 border rounded-lg text-sm focus:outline-none focus:border-indigo-500"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 focus:outline-none"
+                  title={showConfirmPassword ? "Hide password" : "Show password"}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
 
           {isRegister && (
             <div>
