@@ -238,23 +238,41 @@ export default function NegotiationChat() {
         {/* Live Video Call Modal Container */}
         {showVideoCall && (
           <div className="bg-slate-950 p-3 border-b border-slate-800 space-y-2 relative">
-            <div className="flex items-center justify-between text-xs text-slate-300 px-1 font-semibold">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-300 px-1 font-semibold">
               <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
                 <Video className="w-4 h-4" /> HD Video Meeting Room Active
               </span>
-              <button
-                onClick={() => setShowVideoCall(false)}
-                className="text-slate-400 hover:text-white flex items-center gap-1 text-xs"
-              >
-                <X className="w-4 h-4" /> Close Meeting View
-              </button>
+
+              <div className="flex items-center gap-3">
+                <a
+                  href={`https://meet.jit.si/gatherspace_room_${roomId.replace(/[^a-zA-Z0-9]/g, "")}#config.disableDeepLinking=true&config.prejoinPageEnabled=false`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-[11px] px-3 py-1 rounded-lg transition flex items-center gap-1"
+                >
+                  📱 Open Mobile Fullscreen Call
+                </a>
+                <button
+                  onClick={() => setShowVideoCall(false)}
+                  className="text-slate-400 hover:text-white flex items-center gap-1 text-xs"
+                >
+                  <X className="w-4 h-4" /> Close Meeting View
+                </button>
+              </div>
             </div>
-            <div className="w-full h-80 rounded-xl overflow-hidden border border-slate-800">
+
+            <div className="bg-slate-900 text-slate-300 text-[11px] px-3 py-1.5 rounded-lg border border-slate-800 flex items-center justify-between">
+              <span>
+                💡 <strong>Mobile Camera Fix:</strong> If camera screen is dark, grant Camera/Microphone permissions in your browser address bar or tap <strong className="text-indigo-400">Open Mobile Fullscreen Call</strong>.
+              </span>
+            </div>
+
+            <div className="w-full h-80 rounded-xl overflow-hidden border border-slate-800 bg-slate-900">
               <iframe
-                src={`https://meet.jit.si/gatherspace_room_${roomId.replace(/[^a-zA-Z0-9]/g, "")}#config.prejoinPageEnabled=false&interfaceConfig.TOOLBAR_BUTTONS=['microphone','camera','desktop','fullscreen','fudeviceselection','hangup']`}
+                src={`https://meet.jit.si/gatherspace_room_${roomId.replace(/[^a-zA-Z0-9]/g, "")}#config.disableDeepLinking=true&config.prejoinPageEnabled=false&config.startWithAudioMuted=false&config.startWithVideoMuted=false&interfaceConfig.TOOLBAR_BUTTONS=['microphone','camera','desktop','fullscreen','fudeviceselection','hangup']`}
                 title="Live Video Meeting"
                 className="w-full h-full border-none"
-                allow="camera; microphone; display-capture; autoplay; clipboard-write"
+                allow="camera *; microphone *; display-capture *; autoplay *; clipboard-write *; fullscreen *"
               />
             </div>
           </div>
